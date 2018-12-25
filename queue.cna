@@ -1,0 +1,41 @@
+import * from: /opt/jar_files/jackson-core-2.9.8.jar;
+import * from: /opt/jar_files/jackson-annotations-2.9.8.jar;
+import com.fasterxml.jackson.databind.ObjectMapper from: /opt/jar_files/jackson-databind-2.9.8.jar;
+import redis.clients.jedis.Jedis from: /opt/jar_files/jedis-3.0.0.jar;
+
+$mapper = [new ObjectMapper];
+$jedis = [new Jedis: [System getenv: 'REDIS_URL']];
+$teamserver_id = [System getenv: 'TEAMSERVER_ID'];
+$in_list = "in:$teamserver_id";
+$processing_list = "processing:$teamserver_id";
+$out_list = "out:$teamserver_id";
+
+sub debug
+{
+  println("DEBUG $1");
+}
+
+while (1) {
+  $encoded_job = [$jedis brpoplpush: $in_list, $processing_list, 0];
+  debug("encoded job: $encoded_job");
+  @parts = map({ return base64_decode($1); }, split('\|', $encoded_job));
+  if (size(@parts)) {
+    #throw
+  }
+  debug(@parts);
+  $job_id = @parts[0];
+  $code = @parts[1];
+  @args = @();
+  if (size(@parts) > 2) {
+    @args = sublist(@parts, 2);
+  }
+
+  debug("job_id: $job_id");
+  %hash['id'] = $job_id;
+  %hash['result'] = eval($code);
+  debug("setting key: $job_id");
+  [$jedis set: $job_id, [$mapper writeValueAsString: %hash]];
+  debug("removing from $processing_list $encoded_job");
+  [$jedis lrem: $processing_list, 0, $encoded_job];
+  debug("restarting loop");
+}
