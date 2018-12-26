@@ -3,14 +3,15 @@ import * from: /opt/jar_files/jackson-annotations-2.9.8.jar;
 import com.fasterxml.jackson.databind.ObjectMapper from: /opt/jar_files/jackson-databind-2.9.8.jar;
 import redis.clients.jedis.Jedis from: /opt/jar_files/jedis-3.0.0.jar;
 
-
 $mapper = [new ObjectMapper];
 $jedis = [new Jedis: [System getenv: 'REDIS_URL']];
+$teamserver_id = [System getenv: 'TEAMSERVER_ID'];
+$events_channel = "events:$teamserver_id";
 
 # Places all events into a redis queue.
 on * {
   %hash["name"] = $1;
   %hash["args"] = @_;
   $msg = [$mapper writeValueAsString: %hash];
-  [$jedis lpush: "events", @($msg)];
+  [$jedis lpush: $events_channel, @($msg)];
 }
