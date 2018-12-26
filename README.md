@@ -21,7 +21,7 @@ First, why not? Second, use your imagination, imagine being able to see new beac
 
 ## Up and Running
 Copy `jar_files` to `/opt` and change permissions accordingly. Then on the servers-side set the following environment variables:
-* `REDIS_SERVER_URL`
+* `REDIS_URL`
 * `TEAMSERVER_ID`
 
 Run either the `queue.cna` or `events.cna` using `agscript`. You can now subscribe to `events:$teamserver_id` for events. See `cmd/cs-magik-call/main.go` for an example of how to use the job queue.
